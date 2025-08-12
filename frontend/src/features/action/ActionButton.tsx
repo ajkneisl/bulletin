@@ -1,15 +1,16 @@
-import React, { useMemo } from "react"
-import { MdAccountBox, MdEdit } from "react-icons/md"
-import { FaPlus } from "react-icons/fa6"
-import { FaCog } from "react-icons/fa"
+import { MdEdit } from "react-icons/md"
+import { FaPerson, FaPlus } from "react-icons/fa6"
 import { useAtom } from "jotai"
 import {
     authorizationToken,
     createBlockOpen,
-    editorMode
+    editorMode,
+    insertLinesOpen
 } from "../../api/Editor"
 import clsx from "clsx"
 import ActionItem from "./ActionItem"
+import { FaArrowRight } from "react-icons/fa"
+import { FiLogOut } from "react-icons/fi"
 
 /**
  * Button on the bottom right of the screen.
@@ -19,6 +20,7 @@ import ActionItem from "./ActionItem"
 export default function ActionButton() {
     const [editor, setEditor] = useAtom(editorMode)
     const [, openCreate] = useAtom(createBlockOpen)
+    const [, openInsert] = useAtom(insertLinesOpen)
     const [token, setToken] = useAtom(authorizationToken)
 
     const className = clsx(
@@ -44,8 +46,20 @@ export default function ActionButton() {
 
                 <div className="pointer-events-none absolute bottom-0 right-1 flex flex-col items-end gap-2">
                     <ActionItem
+                        action={() => setToken("")}
+                        icon={<FiLogOut />}
+                        delay="125"
+                    />
+
+                    <ActionItem
                         action={() => openCreate(true)}
                         icon={<FaPlus />}
+                        delay="100"
+                    />
+
+                    <ActionItem
+                        action={() => openInsert(true)}
+                        icon={<FaArrowRight />}
                         delay="75"
                     />
                 </div>

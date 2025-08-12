@@ -4,11 +4,12 @@ import {
     CreateBlockModal,
     fileAtom,
     formDetails
-} from "../components/CreateModalBlock"
+} from "../features/bulletin/CreateModalBlock"
 import ActionButton from "../features/action/ActionButton"
 import { useAtom } from "jotai"
 import { authorizationToken, createBlockOpen } from "../api/Editor"
 import { useDimensions } from "../hooks/useDimensions"
+import { InsertLinesModal } from "../features/bulletin/InsertLinesModal"
 
 export default function App() {
     useDimensions()
@@ -90,6 +91,7 @@ export default function App() {
             )}
 
             {token && <CreateBlockModal />}
+            {token && <InsertLinesModal />}
         </div>
     )
 }

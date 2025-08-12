@@ -1,14 +1,19 @@
 import React, { useEffect, useMemo, useRef, useState } from "react"
 import { BlockItem } from "./blocks/BlockItem"
-import { blocksAtom, retrieveBlocks } from "../../api/Blocks"
+import { blocksAtom, retrieveBlocks } from "./api/Blocks"
 import { useAtom } from "jotai"
 import clsx from "clsx"
 import { BASE_URL } from "../../api/Util"
 import { dimensionsAtom } from "../../hooks/useDimensions"
+import { authorizationToken } from "../../api/Editor"
 
-// Main Component
+/**
+ * The primary bulletin board.
+ * @constructor
+ */
 export default function Bulletin() {
     const [blocks, setBlocks] = useAtom(blocksAtom)
+    const [token] = useAtom(authorizationToken)
 
     const [{ COLS, ROWS, COL_WIDTH, ROW_HEIGHT, MAX_WIDTH, MAX_HEIGHT }] =
         useAtom(dimensionsAtom)
@@ -29,7 +34,6 @@ export default function Bulletin() {
     })
     const offsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
-    // Mouse handlers for resizing
     useEffect(() => {
         function resizeBlock(id: string, width: number, height: number) {
             const block = blocks.find((b) => b.id === id)
@@ -41,10 +45,10 @@ export default function Bulletin() {
             formData.append("name", "size")
             formData.append("value", `${width}/${height}`)
 
-            // Placeholder API
             fetch(`${BASE_URL}/blocks`, {
                 method: "POST",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 body: new URLSearchParams(formData as any)
@@ -113,7 +117,6 @@ export default function Bulletin() {
         setBlocks
     ])
 
-    // Mouse handlers for dragging
     useEffect(() => {
         function moveBlock(id: string) {
             const block = blocks.find((b) => b.id === id)
@@ -128,6 +131,7 @@ export default function Bulletin() {
             fetch(`${BASE_URL}/blocks`, {
                 method: "POST",
                 headers: {
+                    Authorization: `Bearer ${token}`,
                     "Content-Type": "application/x-www-form-urlencoded"
                 },
                 body: new URLSearchParams(formData as any)
@@ -179,7 +183,16 @@ export default function Bulletin() {
             window.removeEventListener("mousemove", onMouseMove)
             window.removeEventListener("mouseup", onMouseUp)
         }
-    }, [COLS, COL_WIDTH, ROWS, ROW_HEIGHT, blocks, draggingId, setBlocks])
+    }, [
+        COLS,
+        COL_WIDTH,
+        ROWS,
+        ROW_HEIGHT,
+        blocks,
+        draggingId,
+        setBlocks,
+        token
+    ])
 
     // grid size depending on screen size
     const style = useMemo(() => {

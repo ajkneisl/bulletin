@@ -1,4 +1,4 @@
-import { Block } from "api/models/Block"
+import { Block } from "features/bulletin/api/models/Block"
 import React, { useEffect, useRef, useState } from "react"
 
 /**

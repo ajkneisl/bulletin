@@ -23,3 +23,5 @@ export const usernameAtom = atom<string | null>(null)
  * Create block modal is open
  */
 export const createBlockOpen = atom(false)
+
+export const insertLinesOpen = atom(false)

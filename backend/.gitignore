@@ -38,3 +38,5 @@ out/
 /photos/
 photos.db
 .kotlin
+
+secret

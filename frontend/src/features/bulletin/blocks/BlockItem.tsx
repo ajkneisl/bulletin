@@ -1,13 +1,13 @@
-import React, { useEffect, useMemo } from "react"
+import React, { useMemo } from "react"
 import clsx from "clsx"
-import { Block } from "../../../api/models/Block"
+import { Block } from "../api/models/Block"
 import { useAtom } from "jotai"
-import { editorMode } from "../../../api/Editor"
+import { authorizationToken, editorMode } from "../../../api/Editor"
 import { IoMdResize } from "react-icons/io"
 import { MdDragHandle, MdEdit } from "react-icons/md"
 import { useImageBrightness } from "../../../hooks/useImageBrightness"
 import { IoTrash } from "react-icons/io5"
-import { blocksAtom, deleteBlock, expandedBlockAtom } from "../../../api/Blocks"
+import { blocksAtom, deleteBlock, expandedBlockAtom } from "../api/Blocks"
 import { BASE_URL } from "../../../api/Util"
 import { dimensionsAtom } from "../../../hooks/useDimensions"
 import TextBlock from "./TextBlock"
@@ -40,6 +40,8 @@ export function BlockItem({
     const isResizing = resizingId === block.id
     const isDragging = draggingId === block.id
 
+    const [token] = useAtom(authorizationToken)
+
     const [blocks, setBlocks] = useAtom(blocksAtom)
     const [editor] = useAtom(editorMode)
     const [{ COL_WIDTH, ROW_HEIGHT, COLS }] = useAtom(dimensionsAtom)
@@ -58,7 +60,7 @@ export function BlockItem({
      * Deletes this block.
      */
     async function remove() {
-        await deleteBlock(block.id)
+        await deleteBlock(token ?? "", block.id)
 
         setBlocks((prev) =>
             prev.filter((filterBlock) => filterBlock.id !== block.id)

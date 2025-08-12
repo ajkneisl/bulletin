@@ -1,7 +1,7 @@
-import React, { useEffect } from "react"
 import { Outlet } from "react-router"
 import { useAtom } from "jotai"
-import { authorizationToken, usernameAtom } from "../api/Editor"
+import { authorizationToken, usernameAtom } from "api/Editor"
+import { useEffect } from "react"
 import { getUsername } from "../api/Account"
 
 export default function Layout() {
@@ -9,7 +9,7 @@ export default function Layout() {
     const [, setUsername] = useAtom(usernameAtom)
 
     useEffect(() => {
-        async function loadUsername() {
+        ;(async () => {
             if (!token) return
 
             const request = await getUsername(token)
@@ -22,22 +22,12 @@ export default function Layout() {
                 setUsername(null)
                 setToken(null)
             }
-
-            loadUsername()
-        }
+        })()
     }, [setToken, setUsername, token])
 
     return (
-        <div className="flex min-h-screen flex-col">
-            <main className="flex-1">
-                <Outlet />
-            </main>
-
-            <footer className="footer footer-center h-[48px] bg-base-200 p-4 text-sm font-normal text-base-content">
-                <div>
-                    <p>bulletin {new Date().getFullYear()}</p>
-                </div>
-            </footer>
+        <div className="min-h-screen ">
+            <Outlet />
         </div>
     )
 }

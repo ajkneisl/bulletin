@@ -1,10 +1,10 @@
 import clsx from "clsx"
 import { BASE_URL } from "../../../api/Util"
 import React, { useMemo } from "react"
-import { Block } from "../../../api/models/Block"
+import { Block } from "../api/models/Block"
 import { useAtom } from "jotai"
 import { editorMode } from "../../../api/Editor"
-import { expandedBlockAtom } from "../../../api/Blocks"
+import { expandedBlockAtom } from "../api/Blocks"
 
 /**
  * A photo block.

@@ -1,14 +1,19 @@
 package dev.ajkneisl.bulletin.blocks
 
+import dev.ajkneisl.bulletin.errors.ServerError
 import dev.ajkneisl.bulletin.photos.deletePhoto
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.update
+import kotlin.collections.map
 
 /**
  * A block that is placed on the bulletin.
@@ -42,6 +47,27 @@ suspend fun updateBlockPosition(id: String, x: Int, y: Int) = newSuspendedTransa
     }
 }
 
+/**
+ * Update a block's ([id]) properties.
+ *
+ * This simply appends, or overwrites if they exist, the current properties.
+ */
+suspend fun updateBlockProperty(id: String, properties: HashMap<String, String>) =
+    newSuspendedTransaction {
+        val blockProperties =
+            Blocks.select(Blocks.id, Blocks.properties).where { Blocks.id eq id }.singleOrNull()
+                ?: throw ServerError("Invalid block.", 400)
+
+        val decodedProperties =
+            Json.decodeFromString<HashMap<String, String>>(blockProperties[Blocks.properties])
+
+        decodedProperties.putAll(properties)
+
+        Blocks.update({ Blocks.id eq id }) {
+            it[Blocks.properties] = Json.encodeToString(decodedProperties)
+        }
+    }
+
 /** Update a blocks ([id]) size to [width], height. */
 suspend fun updateBlockSize(id: String, width: Int, height: Int) = newSuspendedTransaction {
     Blocks.update({ Blocks.id eq id }) {
@@ -66,10 +92,32 @@ suspend fun getBlocks() = newSuspendedTransaction {
     }
 }
 
+/**
+ * Get a block by it's [id.]
+ */
+suspend fun getBlock(id: String): Block? = newSuspendedTransaction {
+    Blocks.selectAll().where{Blocks.id eq id}.singleOrNull()?.let {
+        Block(
+            it[Blocks.id],
+            it[Blocks.x],
+            it[Blocks.y],
+            it[Blocks.width],
+            it[Blocks.height],
+            it[Blocks.type],
+            it[Blocks.content],
+            Json.decodeFromString(it[Blocks.properties]),
+        )
+    }
+}
+
 private val chars = ('A'..'Z') + ('a'..'z')
 
 /** Create a block at 0, 0 with [content] and [type]. */
-suspend fun createBlock(content: String, type: BlockType): String = newSuspendedTransaction {
+suspend fun createBlock(
+    content: String,
+    type: BlockType,
+    options: HashMap<String, String>,
+): String = newSuspendedTransaction {
     var unique: Boolean
     var id: String
 
@@ -87,7 +135,7 @@ suspend fun createBlock(content: String, type: BlockType): String = newSuspended
         it[Blocks.height] = 1
         it[Blocks.type] = type
         it[Blocks.content] = content
-        it[Blocks.properties] = "{}"
+        it[Blocks.properties] = Json.encodeToString(options)
     } get Blocks.id
 }
 
@@ -104,4 +152,13 @@ suspend fun deleteBlock(id: String) = newSuspendedTransaction {
     }
 
     // TODO: error if it doesn't exist?
+}
+
+/** Shift all blocks down by a certain amount. */
+suspend fun shiftBlocks(amount: Int) = newSuspendedTransaction {
+    for (block in getBlocks()) {
+        Blocks.update({ Blocks.id eq block.id }) {
+            with(SqlExpressionBuilder) { it.update(Blocks.y, Blocks.y + amount) }
+        }
+    }
 }
