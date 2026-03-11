@@ -17,7 +17,7 @@ export default function Bulletin() {
     const [token] = useAtom(authorizationToken)
     const [selectedBoard] = useAtom(selectedBoardAtom)
 
-    const [{ COLS, ROWS, COL_WIDTH, ROW_HEIGHT, MAX_WIDTH, MAX_HEIGHT }] =
+    const [{ COLS, COL_WIDTH, ROW_HEIGHT, MAX_WIDTH, MAX_HEIGHT }] =
         useAtom(dimensionsAtom)
 
     useEffect(() => {
@@ -164,13 +164,10 @@ export default function Bulletin() {
                     )
                 )
             )
-            const y = Math.min(
-                ROWS - 1,
-                Math.max(
-                    0,
-                    Math.round(
-                        (e.clientY - gridRect.top - offset.y) / ROW_HEIGHT
-                    )
+            const y = Math.max(
+                0,
+                Math.round(
+                    (e.clientY - gridRect.top - offset.y) / ROW_HEIGHT
                 )
             )
 
@@ -195,7 +192,6 @@ export default function Bulletin() {
     }, [
         COLS,
         COL_WIDTH,
-        ROWS,
         ROW_HEIGHT,
         blocks,
         draggingId,

@@ -6,8 +6,7 @@ export const dimensionsAtom = atom({
     ROW_HEIGHT: 100,
     MAX_WIDTH: 3,
     MAX_HEIGHT: 3,
-    COLS: 3,
-    ROWS: 12
+    COLS: 3
 })
 
 export const useDimensions = () => {
@@ -28,8 +27,7 @@ export const useDimensions = () => {
             ROW_HEIGHT: colWidth,
             MAX_WIDTH: 3,
             MAX_HEIGHT: 3,
-            COLS: 3,
-            ROWS: 12
+            COLS: 3
         })
     }, [screenSize.width, setDimensions])
 

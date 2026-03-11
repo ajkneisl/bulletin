@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import { atom, useAtom } from "jotai"
 import { FaImage } from "react-icons/fa"
 import { AnimatePresence, motion } from "framer-motion"
@@ -41,6 +41,7 @@ export function CreateBlockModal() {
     const [visible, setVisible] = useAtom(createBlockOpen)
     const [token] = useAtom(authorizationToken)
     const [selectedBoard] = useAtom(selectedBoardAtom)
+    const [submitting, setSubmitting] = useState(false)
 
     const setField =
         <K extends keyof FormDetails>(key: K) =>
@@ -65,26 +66,31 @@ export function CreateBlockModal() {
     }
 
     async function handleSubmit() {
-        if (!selectedBoard) return
+        if (!selectedBoard || submitting) return
 
-        const block = await createBlock(
-            token ?? "",
-            selectedBoard.id,
-            formData.blockType,
-            formData.content,
-            formData.blockType === "photo"
-                ? {
-                      DEFAULT_QUALITY: `${formData.defaultQuality}`,
-                      LONG_DESCRIPTION: formData.longDescription
-                  }
-                : {
-                      FONT_GROW: `${formData.fontGrow}`,
-                      FONT_SIZE: `${formData.fontSize}`
-                  },
-            file
-        )
-        setBlocks((prev) => prev.concat(block))
-        setVisible(false)
+        try {
+            setSubmitting(true)
+            const block = await createBlock(
+                token ?? "",
+                selectedBoard.id,
+                formData.blockType,
+                formData.content,
+                formData.blockType === "photo"
+                    ? {
+                          DEFAULT_QUALITY: `${formData.defaultQuality}`,
+                          LONG_DESCRIPTION: formData.longDescription
+                      }
+                    : {
+                          FONT_GROW: `${formData.fontGrow}`,
+                          FONT_SIZE: `${formData.fontSize}`
+                      },
+                file
+            )
+            setBlocks((prev) => prev.concat(block))
+            setVisible(false)
+        } finally {
+            setSubmitting(false)
+        }
     }
 
     return (
@@ -365,10 +371,37 @@ export function CreateBlockModal() {
                                 </button>
                                 <motion.button
                                     onClick={handleSubmit}
-                                    whileTap={{ scale: 0.98 }}
-                                    className="rounded-xl bg-emerald-600 px-4 py-2 font-medium text-white hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                    disabled={submitting}
+                                    whileTap={submitting ? {} : { scale: 0.98 }}
+                                    className={[
+                                        "rounded-xl px-4 py-2 font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-600 flex items-center gap-2",
+                                        submitting
+                                            ? "bg-emerald-700 cursor-not-allowed opacity-75"
+                                            : "bg-emerald-600 hover:bg-emerald-700"
+                                    ].join(" ")}
                                 >
-                                    Create Block
+                                    {submitting && (
+                                        <svg
+                                            className="h-4 w-4 animate-spin"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                            />
+                                        </svg>
+                                    )}
+                                    {submitting ? "Creating…" : "Create Block"}
                                 </motion.button>
                             </div>
                         </motion.div>
