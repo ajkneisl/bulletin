@@ -1,15 +1,15 @@
-FROM gradle:latest AS backend-build
+FROM gradle:jdk21 AS backend-build
 WORKDIR /backend
 COPY backend /backend
 
 RUN gradle shadowJar
 
-FROM node:latest AS frontend-build
+FROM oven/bun:latest AS frontend-build
 WORKDIR /frontend
 COPY frontend /frontend
 
-RUN npm install --force
-RUN npm run build
+RUN bun install
+RUN bun run build
 
 FROM ubuntu:latest
 
