@@ -9,6 +9,7 @@ WORKDIR /frontend
 COPY frontend /frontend
 
 RUN bun install
+ENV VITE_BASE_URL=https://ajkneisl.photos/api
 RUN bun run build
 
 FROM ubuntu:latest
