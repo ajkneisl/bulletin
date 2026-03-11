@@ -8,6 +8,7 @@ object Blocks : Table("blocks") {
 
     override val primaryKey = PrimaryKey(id)
 
+    val boardId = varchar("board_id", 8)
     val x = integer("x")
     val y = integer("y")
     val width = integer("width")

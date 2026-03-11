@@ -1,5 +1,6 @@
 package dev.ajkneisl.bulletin.blocks
 
+import dev.ajkneisl.bulletin.boards.getBoard
 import dev.ajkneisl.bulletin.errors.InvalidParameters
 import dev.ajkneisl.bulletin.photos.uploadPhoto
 import io.ktor.http.HttpStatusCode
@@ -25,6 +26,9 @@ val blockRoutes: Route.() -> Unit = {
         put("/shift") {
             val parameters = call.receiveParameters()
 
+            val boardId = parameters.getOrFail("boardId")
+            getBoard(boardId) ?: throw InvalidParameters()
+
             val blocksShifted = parameters["amount"]?.toIntOrNull() ?: 3
 
             // no funny business
@@ -32,7 +36,7 @@ val blockRoutes: Route.() -> Unit = {
                 throw InvalidParameters()
             }
 
-            shiftBlocks(blocksShifted)
+            shiftBlocks(boardId, blocksShifted)
 
             call.respond(HttpStatusCode.OK)
         }
@@ -42,9 +46,9 @@ val blockRoutes: Route.() -> Unit = {
             val parameters = call.parameters
 
             val blockId = parameters.getOrFail("id")
-            getBlock(blockId) ?: throw InvalidParameters() // ensure exists
+            val block = getBlock(blockId) ?: throw InvalidParameters()
 
-            deleteBlock(blockId)
+            deleteBlock(blockId, block.boardId)
 
             call.respond(HttpStatusCode.OK)
         }
@@ -122,6 +126,7 @@ val blockRoutes: Route.() -> Unit = {
             var includedFile: ByteArray? = null
             var content: String? = null
             var type: BlockType? = null
+            var boardId: String? = null
             var options: HashMap<String, String> = hashMapOf()
 
             parameters.forEachPart { partData ->
@@ -134,6 +139,9 @@ val blockRoutes: Route.() -> Unit = {
                         when (partData.name?.lowercase()) {
                             "content" -> {
                                 content = partData.value
+                            }
+                            "boardid" -> {
+                                boardId = partData.value
                             }
                             "options" -> {
                                 options =
@@ -155,10 +163,13 @@ val blockRoutes: Route.() -> Unit = {
                 }
             }
 
-            // content and type must be valid
-            if (content == null || type == null) {
+            // content, type, and boardId must be valid
+            if (content == null || type == null || boardId == null) {
                 return@put call.respond(BadRequest)
             }
+
+            // ensure board exists
+            getBoard(boardId!!) ?: return@put call.respond(BadRequest)
 
             val finalType = type!!
             val blockProperties = finalType.properties.toList().map { it.toString() }
@@ -173,15 +184,16 @@ val blockRoutes: Route.() -> Unit = {
                 if (option !in blockProperties) throw InvalidParameters()
             }
 
-            val id = createBlock(content, finalType, options)
+            val id = createBlock(boardId!!, content!!, finalType, options)
 
             if (type == BlockType.PHOTO) {
-                uploadPhoto(id, includedFile!!)
+                uploadPhoto(boardId!!, id, includedFile!!)
             }
 
             call.respond(
                 Block(
                     id = id,
+                    boardId = boardId!!,
                     x = 0,
                     y = 0,
                     width = 1,
@@ -194,9 +206,11 @@ val blockRoutes: Route.() -> Unit = {
         }
     }
 
-    /** Get a list of all [Block]s. */
+    /** Get blocks for a board. */
     get {
-        val blocks = getBlocks()
+        val boardId = call.parameters.getOrFail("boardId")
+
+        val blocks = getBlocksByBoard(boardId)
 
         call.respond(blocks)
     }

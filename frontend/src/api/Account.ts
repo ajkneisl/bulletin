@@ -49,6 +49,51 @@ export async function getUsername(token: string): Promise<string | null> {
 }
 
 /**
+ * Get all accounts.
+ *
+ * @param token The authorization token.
+ */
+export async function getAllAccounts(
+    token: string
+): Promise<string[]> {
+    const response = await fetch(`${BASE_URL}/account?all`, {
+        headers: {
+            Authorization: `Bearer ${token}`
+        }
+    })
+
+    if (!response.ok) {
+        return Promise.reject("Failed to fetch accounts.")
+    }
+
+    const data: { username: string }[] = await response.json()
+    return data.map((a) => a.username)
+}
+
+/**
+ * Update the current user's username.
+ *
+ * @param token The authorization token.
+ * @param newUsername The new username.
+ */
+export async function updateUsername(
+    token: string,
+    newUsername: string
+): Promise<void> {
+    const response = await fetch(`${BASE_URL}/account`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+        body: new URLSearchParams({ newUsername })
+    })
+
+    if (!response.ok) {
+        return Promise.reject("Failed to update username.")
+    }
+}
+
+/**
  * Update a user's password.
  *
  * @param token The authorization token.
@@ -58,19 +103,33 @@ export async function updatePassword(
     token: string,
     newPassword: string
 ): Promise<void> {
-    try {
-        const response = await fetch(`${BASE_URL}/account`, {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${token}`
-            },
-            body: new URLSearchParams({ newPassword })
-        })
+    const response = await fetch(`${BASE_URL}/account`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`
+        },
+        body: new URLSearchParams({ newPassword })
+    })
 
-        if (!response.ok) {
-            return Promise.reject("Invalid authorization!")
+    if (!response.ok) {
+        return Promise.reject("Failed to update password.")
+    }
+}
+
+/**
+ * Delete the current user's account.
+ *
+ * @param token The authorization token.
+ */
+export async function deleteAccount(token: string): Promise<void> {
+    const response = await fetch(`${BASE_URL}/account`, {
+        method: "DELETE",
+        headers: {
+            Authorization: `Bearer ${token}`
         }
-    } catch {
-        return Promise.reject("Invalid token!")
+    })
+
+    if (!response.ok) {
+        return Promise.reject("Failed to delete account.")
     }
 }

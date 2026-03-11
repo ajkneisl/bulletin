@@ -1,5 +1,6 @@
 export interface Block {
     id: string
+    boardId: string
     x: number
     y: number
     width: number

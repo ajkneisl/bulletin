@@ -6,6 +6,7 @@ import clsx from "clsx"
 import { BASE_URL } from "../../api/Util"
 import { dimensionsAtom } from "../../hooks/useDimensions"
 import { authorizationToken } from "../../api/Editor"
+import { selectedBoardAtom } from "./api/Boards"
 
 /**
  * The primary bulletin board.
@@ -14,13 +15,21 @@ import { authorizationToken } from "../../api/Editor"
 export default function Bulletin() {
     const [blocks, setBlocks] = useAtom(blocksAtom)
     const [token] = useAtom(authorizationToken)
+    const [selectedBoard] = useAtom(selectedBoardAtom)
 
     const [{ COLS, ROWS, COL_WIDTH, ROW_HEIGHT, MAX_WIDTH, MAX_HEIGHT }] =
         useAtom(dimensionsAtom)
 
     useEffect(() => {
-        retrieveBlocks().then((retrievedBlocks) => setBlocks(retrievedBlocks))
-    }, [setBlocks])
+        if (!selectedBoard) {
+            setBlocks([])
+            return
+        }
+
+        retrieveBlocks(selectedBoard.id).then((retrievedBlocks) =>
+            setBlocks(retrievedBlocks)
+        )
+    }, [setBlocks, selectedBoard])
 
     const [resizingId, setResizingId] = useState<string | null>(null)
     const [resizePreview, setResizePreview] = useState<{
@@ -194,16 +203,30 @@ export default function Bulletin() {
         token
     ])
 
+    // compute how many rows we actually need based on block positions
+    const maxRow = useMemo(() => {
+        if (blocks.length === 0) return 1
+        return Math.max(...blocks.map((b) => b.y + b.height))
+    }, [blocks])
+
     // grid size depending on screen size
     const style = useMemo(() => {
         return {
-            gridTemplateRows: `repeat(${ROWS}, ${ROW_HEIGHT}px)`,
+            gridTemplateRows: `repeat(${maxRow}, ${ROW_HEIGHT}px)`,
             gridTemplateColumns: `repeat(${COLS}, ${COL_WIDTH}px)`
         }
-    }, [ROWS, ROW_HEIGHT, COLS, COL_WIDTH])
+    }, [maxRow, ROW_HEIGHT, COLS, COL_WIDTH])
+
+    if (!selectedBoard) {
+        return (
+            <div className="flex h-64 items-center justify-center text-sm lowercase italic text-neutral-600">
+                no board selected
+            </div>
+        )
+    }
 
     return (
-        <div id="grid" className={clsx("mx-auto mt-8 grid")} style={style}>
+        <div id="grid" className={clsx("mx-auto mt-4 grid max-w-lg")} style={style}>
             {blocks.map((block) => (
                 <BlockItem
                     key={block.id}

@@ -7,7 +7,7 @@ import { IoMdResize } from "react-icons/io"
 import { MdDragHandle, MdEdit } from "react-icons/md"
 import { useImageBrightness } from "../../../hooks/useImageBrightness"
 import { IoTrash } from "react-icons/io5"
-import { blocksAtom, deleteBlock, expandedBlockAtom } from "../api/Blocks"
+import { blocksAtom, deleteBlock } from "../api/Blocks"
 import { BASE_URL } from "../../../api/Util"
 import { dimensionsAtom } from "../../../hooks/useDimensions"
 import TextBlock from "./TextBlock"
@@ -45,15 +45,8 @@ export function BlockItem({
     const [blocks, setBlocks] = useAtom(blocksAtom)
     const [editor] = useAtom(editorMode)
     const [{ COL_WIDTH, ROW_HEIGHT, COLS }] = useAtom(dimensionsAtom)
-    const [expandedBlock, setExpandedBlock] = useAtom(expandedBlockAtom)
-
     const { isDark, imgRef } = useImageBrightness(
-        `${BASE_URL}/photos/${block.id}.png`
-    )
-
-    const isExpanded = useMemo(
-        () => expandedBlock === block.id,
-        [block.id, expandedBlock]
+        `${BASE_URL}/photos/${block.boardId}/${block.id}.png`
     )
 
     /**
@@ -83,10 +76,8 @@ export function BlockItem({
         return {
             gridColumnStart: newX + 1,
             gridRowStart: newY + 1,
-            gridColumnEnd: `span ${
-                isExpanded ? visibleWidth + 1 : visibleWidth
-            }`,
-            gridRowEnd: `span ${isExpanded ? visibleHeight + 1 : visibleHeight}`
+            gridColumnEnd: `span ${visibleWidth}`,
+            gridRowEnd: `span ${visibleHeight}`
         }
     }, [
         COLS,
@@ -95,7 +86,6 @@ export function BlockItem({
         block.x,
         block.y,
         blocks,
-        isExpanded,
         isResizing,
         resizePreview
     ])
@@ -106,10 +96,9 @@ export function BlockItem({
                 "relative select-none overflow-hidden border border-black",
                 "bg-gray-800 shadow-md",
                 "transition-all duration-200 ease-in-out",
-                isExpanded ? "z-50" : "z-0",
                 block.type === "TEXT" ? "p-2" : ""
             ),
-        [isExpanded, block.type]
+        [block.type]
     )
 
     const resizeStyle = useMemo(() => {

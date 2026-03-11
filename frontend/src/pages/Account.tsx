@@ -2,6 +2,12 @@ import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
 import { useAtom } from "jotai"
 import { authorizationToken, usernameAtom } from "../api/Editor"
+import {
+    deleteAccount,
+    getAllAccounts,
+    updatePassword,
+    updateUsername
+} from "../api/Account"
 
 export default function Account() {
     const nav = useNavigate()
@@ -14,38 +20,44 @@ export default function Account() {
     const [error, setError] = useState<string | null>(null)
 
     useEffect(() => {
+        if (!token) return
         ;(async () => {
             try {
-                // const result = await getAllAccounts(token)
+                const result = await getAllAccounts(token)
                 setAccounts(result)
-            } catch (e) {
+            } catch {
                 setError("Failed to fetch accounts.")
             }
         })()
     }, [token])
 
     const handleUsernameUpdate = async () => {
+        if (!token || !newUsername.trim()) return
         try {
-            // await updateUsername(token, newUsername)
-            setUsername(newUsername)
+            await updateUsername(token, newUsername.trim())
+            setUsername(newUsername.trim())
             setNewUsername("")
+            setError(null)
         } catch {
             setError("Failed to update username.")
         }
     }
 
     const handlePasswordUpdate = async () => {
+        if (!token || !newPassword) return
         try {
-            // await updatePassword(token, newPassword)
+            await updatePassword(token, newPassword)
             setNewPassword("")
+            setError(null)
         } catch {
             setError("Failed to update password.")
         }
     }
 
     const handleDelete = async () => {
+        if (!token) return
         try {
-            // await deleteAccount(token)
+            await deleteAccount(token)
             setToken(null)
             setUsername(null)
             nav("/login")
@@ -55,7 +67,6 @@ export default function Account() {
     }
 
     const handleLogout = () => {
-        // logout()
         setToken(null)
         setUsername(null)
         nav("/login")

@@ -1,6 +1,8 @@
 package dev.ajkneisl.bulletin.auth
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -41,9 +43,21 @@ suspend fun changePassword(username: String, newPassword: String) = newSuspended
     }
 }
 
+/** Change [oldUsername]'s username to [newUsername]. */
+suspend fun changeUsername(oldUsername: String, newUsername: String) = newSuspendedTransaction {
+    Accounts.update({ Accounts.username eq oldUsername }) {
+        it[username] = newUsername
+    }
+}
+
+/** Delete an account by [username]. */
+suspend fun deleteAccount(username: String) = newSuspendedTransaction {
+    Accounts.deleteWhere { Accounts.username eq username }
+}
+
 /** Retrieve all accounts. */
 suspend fun getAllAccounts(): List<Account> = newSuspendedTransaction {
     Accounts.selectAll().toList().map { row ->
-        Account(row[Accounts.username], row[Accounts.password])
+        Account(row[Accounts.username])
     }
 }

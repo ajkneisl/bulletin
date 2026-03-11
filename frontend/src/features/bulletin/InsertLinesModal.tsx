@@ -3,12 +3,14 @@ import { useAtom } from "jotai"
 import { AnimatePresence, motion } from "framer-motion"
 import { authorizationToken, insertLinesOpen } from "../../api/Editor"
 import { blocksAtom, shiftBlocks } from "./api/Blocks"
+import { selectedBoardAtom } from "./api/Boards"
 
 /** Insert Lines modal  */
 export function InsertLinesModal() {
     const [token] = useAtom(authorizationToken)
     const [visible, setVisible] = useAtom(insertLinesOpen)
     const [, setBlocks] = useAtom(blocksAtom)
+    const [selectedBoard] = useAtom(selectedBoardAtom)
     const [count, setCount] = useState(1)
 
     const clamp = (n: number) => Math.max(1, Math.min(9, n))
@@ -24,10 +26,11 @@ export function InsertLinesModal() {
     }
 
     const handleConfirm = async () => {
+        if (!selectedBoard) return
         const amount = clamp(count)
 
         try {
-            await shiftBlocks(token ?? "", amount)
+            await shiftBlocks(token ?? "", selectedBoard.id, amount)
 
             setBlocks((prev) => {
                 return prev.map((block) => ({

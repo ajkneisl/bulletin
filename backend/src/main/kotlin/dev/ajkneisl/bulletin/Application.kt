@@ -2,10 +2,16 @@ package dev.ajkneisl.bulletin
 
 import dev.ajkneisl.bulletin.auth.Accounts
 import dev.ajkneisl.bulletin.auth.JwtHandler
+import dev.ajkneisl.bulletin.auth.changePassword
+import dev.ajkneisl.bulletin.auth.changeUsername
+import dev.ajkneisl.bulletin.auth.deleteAccount
 import dev.ajkneisl.bulletin.auth.getAllAccounts
+import dev.ajkneisl.bulletin.auth.initializeAccount
 import dev.ajkneisl.bulletin.auth.login
 import dev.ajkneisl.bulletin.blocks.Blocks
 import dev.ajkneisl.bulletin.blocks.blockRoutes
+import dev.ajkneisl.bulletin.boards.Boards
+import dev.ajkneisl.bulletin.boards.boardRoutes
 import dev.ajkneisl.bulletin.errors.InvalidAuthorization
 import dev.ajkneisl.bulletin.errors.InvalidParameters
 import dev.ajkneisl.bulletin.errors.ServerError
@@ -36,6 +42,7 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.request.receiveParameters
 import io.ktor.server.response.respond
+import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
@@ -98,7 +105,9 @@ fun main(args: Array<String>) {
     runBlocking {
         loadDatabase(File(directory, "photos.db"))
 
-        newSuspendedTransaction { SchemaUtils.createMissingTablesAndColumns(Accounts, Blocks) }
+        newSuspendedTransaction { SchemaUtils.createMissingTablesAndColumns(Accounts, Blocks, Boards) }
+
+        initializeAccount()
     }
 
     embeddedServer(
@@ -202,8 +211,31 @@ fun Application.module() {
                             call.principal<JWTPrincipal>() ?: throw InvalidAuthorization()
 
                         val username = principal.payload.subject
+                        val params = call.receiveParameters()
 
-                        call.respond(mapOf("username" to username))
+                        val newUsername = params["newUsername"]
+                        val newPassword = params["newPassword"]
+
+                        if (newUsername != null && newUsername.isNotBlank()) {
+                            changeUsername(username, newUsername)
+                        }
+
+                        if (newPassword != null && newPassword.isNotBlank()) {
+                            changePassword(newUsername ?: username, newPassword)
+                        }
+
+                        call.respond(mapOf("username" to (newUsername ?: username)))
+                    }
+
+                    /** Delete account. */
+                    delete {
+                        val principal =
+                            call.principal<JWTPrincipal>() ?: throw InvalidAuthorization()
+
+                        val username = principal.payload.subject
+                        deleteAccount(username)
+
+                        call.respond(HttpStatusCode.OK)
                     }
                 }
             }
@@ -221,6 +253,9 @@ fun Application.module() {
 
             /** Photos */
             route("/photos", photoRoutes)
+
+            /** Boards */
+            route("/boards", boardRoutes)
 
             /** Blocks */
             route("/blocks", blockRoutes)

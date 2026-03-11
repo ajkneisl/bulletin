@@ -4,7 +4,7 @@ import { FaImage } from "react-icons/fa"
 import { AnimatePresence, motion } from "framer-motion"
 import { blocksAtom, createBlock } from "./api/Blocks"
 import { authorizationToken, createBlockOpen } from "../../api/Editor"
-import { HTMLInputElement } from "happy-dom"
+import { selectedBoardAtom } from "./api/Boards"
 
 export type BlockQuality = "FULL" | "HALF" | "THUMB"
 
@@ -40,6 +40,7 @@ export function CreateBlockModal() {
     const [formData, setFormData] = useAtom(formDetails)
     const [visible, setVisible] = useAtom(createBlockOpen)
     const [token] = useAtom(authorizationToken)
+    const [selectedBoard] = useAtom(selectedBoardAtom)
 
     const setField =
         <K extends keyof FormDetails>(key: K) =>
@@ -47,17 +48,16 @@ export function CreateBlockModal() {
             setFormData((prev) => ({ ...prev, [key]: value }))
 
     const handleChange = (
-        e: React.ChangeEvent<
-            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-        >
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
     ) => {
-        const { name, type, value } = e.currentTarget
-        if (type === "checkbox") {
+        const target = e.currentTarget
+        const { name, value } = target
+        if (target instanceof HTMLInputElement && target.type === "checkbox") {
             setFormData((prev) => ({
                 ...prev,
-                [name]: e.currentTarget.checked
+                [name]: target.checked
             }))
-        } else if (type === "number") {
+        } else if (target instanceof HTMLInputElement && target.type === "number") {
             setFormData((prev) => ({ ...prev, [name]: Number(value) }))
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }))
@@ -65,8 +65,11 @@ export function CreateBlockModal() {
     }
 
     async function handleSubmit() {
+        if (!selectedBoard) return
+
         const block = await createBlock(
             token ?? "",
+            selectedBoard.id,
             formData.blockType,
             formData.content,
             formData.blockType === "photo"

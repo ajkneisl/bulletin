@@ -7,10 +7,13 @@ export const blocksAtom = atom<Block[]>([])
 export const expandedBlockAtom = atom<string | null>(null)
 
 /**
- * Retrieve a list of all blocks.
+ * Retrieve blocks for a specific board.
  */
-export async function retrieveBlocks(): Promise<Block[]> {
-    const request = await fetch(`${BASE_URL}/blocks`)
+export async function retrieveBlocks(boardId: string): Promise<Block[]> {
+    const url = new URL(`${BASE_URL}/blocks`)
+    url.searchParams.set("boardId", boardId)
+
+    const request = await fetch(url)
 
     return await request.json()
 }
@@ -39,18 +42,23 @@ export async function deleteBlock(token: string, id: string) {
 }
 
 /**
- * Shift all blocks down a certain amount.
+ * Shift all blocks in a board down a certain amount.
  *
  * @param token Authorization token.
+ * @param boardId The board to shift blocks in.
  * @param amount The amount to shift down.
  */
-export async function shiftBlocks(token: string, amount: number) {
+export async function shiftBlocks(
+    token: string,
+    boardId: string,
+    amount: number
+) {
     const response = await fetch(`${BASE_URL}/blocks/shift`, {
         method: "PUT",
         headers: {
             Authorization: `Bearer ${token}`
         },
-        body: new URLSearchParams({ amount: `${amount}` })
+        body: new URLSearchParams({ boardId, amount: `${amount}` })
     })
 
     if (!response.ok) return Promise.reject("Failed to shift blocks.")
@@ -60,6 +68,7 @@ export async function shiftBlocks(token: string, amount: number) {
  * Create a block.
  *
  * @param token Authorization token.
+ * @param boardId The board to create the block in.
  * @param type Type of block
  * @param content The contents of the block.
  * @param details Possible options of a block.
@@ -67,6 +76,7 @@ export async function shiftBlocks(token: string, amount: number) {
  */
 export async function createBlock(
     token: string,
+    boardId: string,
     type: string,
     content: string,
     details: Record<string, string>,
@@ -74,6 +84,7 @@ export async function createBlock(
 ): Promise<Block> {
     const formData = new FormData()
 
+    formData.append("boardId", boardId)
     formData.append("type", type)
     formData.append("content", content)
     formData.append("options", JSON.stringify(details))

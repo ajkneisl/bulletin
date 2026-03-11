@@ -8,6 +8,7 @@ import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.sql.SqlExpressionBuilder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
@@ -19,6 +20,7 @@ import kotlin.collections.map
  * A block that is placed on the bulletin.
  *
  * @param id The ID of the block.
+ * @param boardId The ID of the board this block belongs to.
  * @param x The X position of the block on the bulletin grid.
  * @param y The Y position of the block on the bulletin grid.
  * @param width The width of the block, in intervals of grid size.
@@ -30,6 +32,7 @@ import kotlin.collections.map
 @Serializable
 data class Block(
     val id: String,
+    val boardId: String,
     val x: Int,
     val y: Int,
     val width: Int,
@@ -76,44 +79,35 @@ suspend fun updateBlockSize(id: String, width: Int, height: Int) = newSuspendedT
     }
 }
 
-/** Retrieve all [Block]s from the backend. */
-suspend fun getBlocks() = newSuspendedTransaction {
-    Blocks.selectAll().toList().map {
-        Block(
-            it[Blocks.id],
-            it[Blocks.x],
-            it[Blocks.y],
-            it[Blocks.width],
-            it[Blocks.height],
-            it[Blocks.type],
-            it[Blocks.content],
-            Json.decodeFromString(it[Blocks.properties]),
-        )
-    }
+private fun rowToBlock(it: org.jetbrains.exposed.sql.ResultRow) = Block(
+    it[Blocks.id],
+    it[Blocks.boardId],
+    it[Blocks.x],
+    it[Blocks.y],
+    it[Blocks.width],
+    it[Blocks.height],
+    it[Blocks.type],
+    it[Blocks.content],
+    Json.decodeFromString(it[Blocks.properties]),
+)
+
+/** Retrieve all [Block]s for a specific board. */
+suspend fun getBlocksByBoard(boardId: String) = newSuspendedTransaction {
+    Blocks.selectAll().where { Blocks.boardId eq boardId }.toList().map { rowToBlock(it) }
 }
 
 /**
- * Get a block by it's [id.]
+ * Get a block by it's [id].
  */
 suspend fun getBlock(id: String): Block? = newSuspendedTransaction {
-    Blocks.selectAll().where{Blocks.id eq id}.singleOrNull()?.let {
-        Block(
-            it[Blocks.id],
-            it[Blocks.x],
-            it[Blocks.y],
-            it[Blocks.width],
-            it[Blocks.height],
-            it[Blocks.type],
-            it[Blocks.content],
-            Json.decodeFromString(it[Blocks.properties]),
-        )
-    }
+    Blocks.selectAll().where { Blocks.id eq id }.singleOrNull()?.let { rowToBlock(it) }
 }
 
 private val chars = ('A'..'Z') + ('a'..'z')
 
-/** Create a block at 0, 0 with [content] and [type]. */
+/** Create a block at 0, 0 with [content] and [type] in board [boardId]. */
 suspend fun createBlock(
+    boardId: String,
     content: String,
     type: BlockType,
     options: HashMap<String, String>,
@@ -129,6 +123,7 @@ suspend fun createBlock(
 
     Blocks.insert {
         it[Blocks.id] = id
+        it[Blocks.boardId] = boardId
         it[Blocks.x] = 0
         it[Blocks.y] = 0
         it[Blocks.width] = 1
@@ -139,24 +134,22 @@ suspend fun createBlock(
     } get Blocks.id
 }
 
-/** Delete a block by it's ID. */
-suspend fun deleteBlock(id: String) = newSuspendedTransaction {
+/** Delete a block by it's ID, with its [boardId] for photo cleanup. */
+suspend fun deleteBlock(id: String, boardId: String) = newSuspendedTransaction {
     val block = Blocks.selectAll().where { Blocks.id eq id }.singleOrNull()
 
     if (block != null) {
         Blocks.deleteWhere { Blocks.id eq id }
 
         if (block[Blocks.type] == BlockType.PHOTO) {
-            deletePhoto(id)
+            deletePhoto(boardId, id)
         }
     }
-
-    // TODO: error if it doesn't exist?
 }
 
-/** Shift all blocks down by a certain amount. */
-suspend fun shiftBlocks(amount: Int) = newSuspendedTransaction {
-    for (block in getBlocks()) {
+/** Shift all blocks in a board down by a certain amount. */
+suspend fun shiftBlocks(boardId: String, amount: Int) = newSuspendedTransaction {
+    for (block in getBlocksByBoard(boardId)) {
         Blocks.update({ Blocks.id eq block.id }) {
             with(SqlExpressionBuilder) { it.update(Blocks.y, Blocks.y + amount) }
         }

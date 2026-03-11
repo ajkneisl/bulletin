@@ -3,6 +3,9 @@
 export default {
     content: ['./src/**/*.{mjs,js,ts,jsx,tsx}'],
     theme: {
+        fontFamily: {
+            serif: ['"Stardom"', 'Georgia', 'serif'],
+        },
         extend: {
             gridColumnStart: {
                 // Add up to max column start index
