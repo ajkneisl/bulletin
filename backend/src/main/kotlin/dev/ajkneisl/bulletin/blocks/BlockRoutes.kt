@@ -2,6 +2,7 @@ package dev.ajkneisl.bulletin.blocks
 
 import dev.ajkneisl.bulletin.boards.getBoard
 import dev.ajkneisl.bulletin.errors.InvalidParameters
+import dev.ajkneisl.bulletin.photos.rotatePhoto
 import dev.ajkneisl.bulletin.photos.uploadPhoto
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.HttpStatusCode.Companion.BadRequest
@@ -22,6 +23,20 @@ import kotlinx.serialization.json.Json
 
 val blockRoutes: Route.() -> Unit = {
     authenticate("administrator") {
+        /** Rotate a photo block's image. */
+        post("/rotate") {
+            val parameters = call.receiveParameters()
+            val blockId = parameters.getOrFail("id")
+            val degrees = parameters.getOrFail("degrees").toDoubleOrNull()
+                ?: return@post call.respond(BadRequest)
+
+            val block = getBlock(blockId) ?: throw InvalidParameters()
+            if (block.type != BlockType.PHOTO) return@post call.respond(BadRequest)
+
+            rotatePhoto(block.boardId, blockId, degrees)
+            call.respond(HttpStatusCode.OK)
+        }
+
         /** Mass shift down blocks. */
         put("/shift") {
             val parameters = call.receiveParameters()

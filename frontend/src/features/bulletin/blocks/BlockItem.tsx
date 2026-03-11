@@ -1,13 +1,13 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useState } from "react"
 import clsx from "clsx"
 import { Block } from "../api/models/Block"
 import { useAtom } from "jotai"
 import { authorizationToken, editorMode } from "../../../api/Editor"
 import { IoMdResize } from "react-icons/io"
-import { MdDragHandle, MdEdit } from "react-icons/md"
+import { MdDragHandle, MdEdit, MdRotateLeft, MdRotateRight } from "react-icons/md"
 import { useImageBrightness } from "../../../hooks/useImageBrightness"
 import { IoTrash } from "react-icons/io5"
-import { blocksAtom, deleteBlock } from "../api/Blocks"
+import { blocksAtom, deleteBlock, rotateBlock, photoVersionAtom } from "../api/Blocks"
 import { BASE_URL } from "../../../api/Util"
 import { dimensionsAtom } from "../../../hooks/useDimensions"
 import TextBlock from "./TextBlock"
@@ -45,9 +45,14 @@ export function BlockItem({
     const [blocks, setBlocks] = useAtom(blocksAtom)
     const [editor] = useAtom(editorMode)
     const [{ COL_WIDTH, ROW_HEIGHT, COLS }] = useAtom(dimensionsAtom)
+    const [, setPhotoVersions] = useAtom(photoVersionAtom)
     const { isDark, imgRef } = useImageBrightness(
         `${BASE_URL}/photos/${block.boardId}/${block.id}.png`
     )
+
+    const [rotating, setRotating] = useState(false)
+    const [rotationDegrees, setRotationDegrees] = useState(0)
+    const [savingRotation, setSavingRotation] = useState(false)
 
     /**
      * Deletes this block.
@@ -58,6 +63,23 @@ export function BlockItem({
         setBlocks((prev) =>
             prev.filter((filterBlock) => filterBlock.id !== block.id)
         )
+    }
+
+    async function handleSaveRotation() {
+        const normalized = ((rotationDegrees % 360) + 360) % 360
+        if (normalized === 0) {
+            setRotating(false)
+            return
+        }
+        try {
+            setSavingRotation(true)
+            await rotateBlock(token ?? "", block.id, normalized)
+            setPhotoVersions((prev) => ({ ...prev, [block.id]: Date.now() }))
+            setRotating(false)
+            setRotationDegrees(0)
+        } finally {
+            setSavingRotation(false)
+        }
     }
 
     // style
@@ -172,6 +194,24 @@ export function BlockItem({
                             <MdEdit />
                         </div>
 
+                        {/* Rotate (photo only) */}
+                        {block.type === "PHOTO" && (
+                            <div
+                                onClick={() => {
+                                    setRotating(true)
+                                    setRotationDegrees(0)
+                                }}
+                                className={clsx(
+                                    "absolute left-5 top-1 z-30 size-3 cursor-pointer rounded-sm",
+                                    isDark
+                                        ? "text-white"
+                                        : "text-black"
+                                )}
+                            >
+                                <MdRotateRight />
+                            </div>
+                        )}
+
                         {/* Resize */}
                         <div
                             data-resize
@@ -207,6 +247,111 @@ export function BlockItem({
                     </>
                 )}
             </div>
+
+            {/* Rotate overlay */}
+            {rotating && (
+                <>
+                    <div
+                        className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm"
+                        onClick={() => {
+                            setRotating(false)
+                            setRotationDegrees(0)
+                        }}
+                    />
+                    <div className="fixed inset-0 z-50 flex items-center justify-center">
+                        <div className="space-y-4 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl">
+                            <h2 className="text-lg font-semibold text-neutral-100">
+                                Rotate Image
+                            </h2>
+                            <div
+                                className="overflow-hidden rounded-xl"
+                                style={{
+                                    width: COL_WIDTH * 3,
+                                    height: COL_WIDTH * 3
+                                }}
+                            >
+                                <img
+                                    src={`${BASE_URL}/photos/${block.boardId}/${block.id}.png?quality=FULL`}
+                                    className="size-full object-cover transition-transform duration-300"
+                                    style={{
+                                        transform: `rotate(${rotationDegrees}deg)`
+                                    }}
+                                    alt={block.content}
+                                />
+                            </div>
+                            <div className="flex items-center justify-center gap-4">
+                                <button
+                                    onClick={() =>
+                                        setRotationDegrees(
+                                            (prev) => prev - 90
+                                        )
+                                    }
+                                    className="flex items-center gap-1 rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-200 hover:bg-neutral-750"
+                                >
+                                    <MdRotateLeft className="size-5" />
+                                </button>
+                                <span className="text-sm text-neutral-400">
+                                    {((rotationDegrees % 360) + 360) % 360}°
+                                </span>
+                                <button
+                                    onClick={() =>
+                                        setRotationDegrees(
+                                            (prev) => prev + 90
+                                        )
+                                    }
+                                    className="flex items-center gap-1 rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-200 hover:bg-neutral-750"
+                                >
+                                    <MdRotateRight className="size-5" />
+                                </button>
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => {
+                                        setRotating(false)
+                                        setRotationDegrees(0)
+                                    }}
+                                    className="rounded-xl border border-neutral-700 bg-neutral-850 px-4 py-2 text-neutral-200 hover:bg-neutral-800"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleSaveRotation}
+                                    disabled={savingRotation}
+                                    className={clsx(
+                                        "flex items-center gap-2 rounded-xl px-4 py-2 font-medium text-white focus:outline-none focus:ring-2 focus:ring-emerald-600",
+                                        savingRotation
+                                            ? "cursor-not-allowed bg-emerald-700 opacity-75"
+                                            : "bg-emerald-600 hover:bg-emerald-700"
+                                    )}
+                                >
+                                    {savingRotation && (
+                                        <svg
+                                            className="h-4 w-4 animate-spin"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                        >
+                                            <circle
+                                                className="opacity-25"
+                                                cx="12"
+                                                cy="12"
+                                                r="10"
+                                                stroke="currentColor"
+                                                strokeWidth="4"
+                                            />
+                                            <path
+                                                className="opacity-75"
+                                                fill="currentColor"
+                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                            />
+                                        </svg>
+                                    )}
+                                    {savingRotation ? "Saving…" : "Save"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
         </div>
     )
 }

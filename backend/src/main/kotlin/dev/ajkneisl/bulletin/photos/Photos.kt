@@ -90,6 +90,75 @@ suspend fun uploadPhoto(boardId: String, id: String, data: ByteArray) {
     }
 }
 
+/** Rotate a photo by its [boardId] and [id] by [degrees]. */
+suspend fun rotatePhoto(boardId: String, id: String, degrees: Double) {
+    val photoLocation = Path(PHOTO_DIR, boardId, id)
+
+    if (!photoLocation.exists()) {
+        throw ServerError("Image does not exist.", 404)
+    }
+
+    coroutineScope {
+        for (quality in PhotoQuality.entries) {
+            launch {
+                val qualityFile = Path(photoLocation.pathString, "$quality.png").toFile()
+                if (!qualityFile.exists()) return@launch
+
+                val image = withContext(Dispatchers.IO) { ImageIO.read(qualityFile) }
+                val output = ByteArrayOutputStream()
+
+                Thumbnails.of(image)
+                    .scale(1.0)
+                    .rotate(degrees)
+                    .outputFormat("png")
+                    .toOutputStream(output)
+
+                withContext(Dispatchers.IO) { qualityFile.writeBytes(output.toByteArray()) }
+            }
+        }
+    }
+}
+
+/** Regenerate HALF and THUMBNAIL versions from FULL for all photos. */
+suspend fun regenerateCache() {
+    val root = File(PHOTO_DIR)
+    if (!root.exists()) return
+
+    // structure: PHOTO_DIR / boardId / blockId / {FULL,HALF,THUMBNAIL}.png
+    val boardDirs = root.listFiles { f -> f.isDirectory } ?: return
+
+    coroutineScope {
+        for (boardDir in boardDirs) {
+            val blockDirs = boardDir.listFiles { f -> f.isDirectory } ?: continue
+            for (blockDir in blockDirs) {
+                val fullFile = File(blockDir, "FULL.png")
+                if (!fullFile.exists()) continue
+
+                launch {
+                    val image = withContext(Dispatchers.IO) { ImageIO.read(fullFile) }
+
+                    for (quality in PhotoQuality.entries) {
+                        if (quality == PhotoQuality.FULL) continue
+
+                        val qualityFile = File(blockDir, "$quality.png")
+                        // delete existing cached version
+                        withContext(Dispatchers.IO) { qualityFile.delete() }
+
+                        val output = ByteArrayOutputStream()
+                        Thumbnails.of(image)
+                            .size(image.width / quality.sizeConvert, image.height / quality.sizeConvert)
+                            .outputQuality(quality.qualityConvert)
+                            .outputFormat("png")
+                            .toOutputStream(output)
+
+                        withContext(Dispatchers.IO) { qualityFile.writeBytes(output.toByteArray()) }
+                    }
+                }
+            }
+        }
+    }
+}
+
 /** Delete a photo by its [boardId] and [id]. */
 suspend fun deletePhoto(boardId: String, id: String) {
     val photoLocation = "${PHOTO_DIR}${File.separator}${boardId}${File.separator}${id}"

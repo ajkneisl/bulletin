@@ -17,6 +17,7 @@ import dev.ajkneisl.bulletin.errors.InvalidParameters
 import dev.ajkneisl.bulletin.errors.ServerError
 import dev.ajkneisl.bulletin.photos.PHOTO_DIR
 import dev.ajkneisl.bulletin.photos.photoRoutes
+import dev.ajkneisl.bulletin.photos.regenerateCache
 import dev.hayden.KHealth
 import io.ktor.http.CacheControl
 import io.ktor.http.ContentType
@@ -108,6 +109,12 @@ fun main(args: Array<String>) {
         newSuspendedTransaction { SchemaUtils.createMissingTablesAndColumns(Accounts, Blocks, Boards) }
 
         initializeAccount()
+
+        if (System.getenv("CLEAR_CACHE")?.lowercase() == "true") {
+            logger.info("CLEAR_CACHE is set, regenerating photo cache...")
+            regenerateCache()
+            logger.info("Photo cache regeneration complete.")
+        }
     }
 
     embeddedServer(

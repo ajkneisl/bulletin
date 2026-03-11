@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react"
 import { Block } from "../api/models/Block"
 import { useAtom } from "jotai"
 import { editorMode } from "../../../api/Editor"
-import { expandedBlockAtom } from "../api/Blocks"
+import { expandedBlockAtom, photoVersionAtom } from "../api/Blocks"
 import { dimensionsAtom } from "../../../hooks/useDimensions"
 
 /**
@@ -24,6 +24,8 @@ export default function PhotoBlock({
     const [editor] = useAtom(editorMode)
     const [expandedBlock, setExpandedBlock] = useAtom(expandedBlockAtom)
     const [{ COL_WIDTH, ROW_HEIGHT }] = useAtom(dimensionsAtom)
+    const [photoVersions] = useAtom(photoVersionAtom)
+    const version = photoVersions[block.id]
 
     const isExpanded = useMemo(
         () => expandedBlock === block.id,
@@ -62,7 +64,7 @@ export default function PhotoBlock({
                 <img
                     ref={imgRef}
                     onDragStart={(e) => e.preventDefault()}
-                    src={`${BASE_URL}/photos/${block.boardId}/${block.id}.png`}
+                    src={`${BASE_URL}/photos/${block.boardId}/${block.id}.png${version ? `?v=${version}` : ""}`}
                     className={clsx(
                         "size-full object-cover",
                         editor ? "pointer-events-none" : ""
@@ -105,7 +107,7 @@ export default function PhotoBlock({
                     >
                         <img
                             onDragStart={(e) => e.preventDefault()}
-                            src={`${BASE_URL}/photos/${block.boardId}/${block.id}.png?quality=FULL`}
+                            src={`${BASE_URL}/photos/${block.boardId}/${block.id}.png?quality=HALF${version ? `&v=${version}` : ""}`}
                             className="size-full object-cover"
                             alt={block.content}
                             onClick={collapse}

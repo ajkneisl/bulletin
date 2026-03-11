@@ -6,6 +6,8 @@ export const blocksAtom = atom<Block[]>([])
 
 export const expandedBlockAtom = atom<string | null>(null)
 
+export const photoVersionAtom = atom<Record<string, number>>({})
+
 /**
  * Retrieve blocks for a specific board.
  */
@@ -62,6 +64,35 @@ export async function shiftBlocks(
     })
 
     if (!response.ok) return Promise.reject("Failed to shift blocks.")
+}
+
+/**
+ * Rotate a photo block's image.
+ *
+ * @param token Authorization token.
+ * @param id The block to rotate.
+ * @param degrees Degrees to rotate (e.g. 90, 180, 270).
+ */
+export async function rotateBlock(
+    token: string,
+    id: string,
+    degrees: number
+) {
+    const response = await fetch(`${BASE_URL}/blocks/rotate`, {
+        method: "POST",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: new URLSearchParams({
+            id,
+            degrees: `${degrees}`
+        })
+    })
+
+    if (!response.ok) {
+        return Promise.reject("Failed to rotate block.")
+    }
 }
 
 /**
