@@ -1,9 +1,10 @@
 import React, { useState } from "react"
 import { useAtom } from "jotai"
 import { AnimatePresence, motion } from "framer-motion"
-import { authorizationToken, insertLinesOpen } from "../../api/Editor"
+import { insertLinesOpen } from "../../api/Editor"
 import { blocksAtom, shiftBlocks } from "./api/Blocks"
 import { selectedBoardAtom } from "./api/Boards"
+import { authorizationToken } from "../../api/Account"
 
 /** Insert Lines modal  */
 export function InsertLinesModal() {
@@ -73,7 +74,7 @@ export function InsertLinesModal() {
                         <motion.div
                             role="dialog"
                             aria-modal="true"
-                            className="w-full max-w-md space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl"
+                            className="w-full max-w-md space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 font-sans shadow-2xl"
                             initial={{ y: 12, scale: 0.98, opacity: 0 }}
                             animate={{ y: 0, scale: 1, opacity: 1 }}
                             exit={{ y: 12, scale: 0.98, opacity: 0 }}

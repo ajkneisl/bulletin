@@ -1,4 +1,19 @@
 import { BASE_URL } from "./Util"
+import { atom } from "jotai"
+import { atomWithStorage } from "jotai/utils"
+
+/**
+ * Authorization token.
+ */
+export const authorizationToken = atomWithStorage<string | null>(
+    "authorizationToken",
+    null
+)
+
+/**
+ * Username
+ */
+export const usernameAtom = atom<string | null>(null)
 
 /**
  * Log in with a provided username and password.
@@ -53,9 +68,7 @@ export async function getUsername(token: string): Promise<string | null> {
  *
  * @param token The authorization token.
  */
-export async function getAllAccounts(
-    token: string
-): Promise<string[]> {
+export async function getAllAccounts(token: string): Promise<string[]> {
     const response = await fetch(`${BASE_URL}/account?all`, {
         headers: {
             Authorization: `Bearer ${token}`

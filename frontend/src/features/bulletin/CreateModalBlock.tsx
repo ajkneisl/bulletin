@@ -3,8 +3,9 @@ import { atom, useAtom } from "jotai"
 import { FaImage } from "react-icons/fa"
 import { AnimatePresence, motion } from "framer-motion"
 import { blocksAtom, createBlock } from "./api/Blocks"
-import { authorizationToken, createBlockOpen } from "../../api/Editor"
+import { createBlockOpen } from "../../api/Editor"
 import { selectedBoardAtom } from "./api/Boards"
+import { authorizationToken } from "../../api/Account"
 
 export type BlockQuality = "FULL" | "HALF" | "THUMB"
 
@@ -49,16 +50,22 @@ export function CreateBlockModal() {
             setFormData((prev) => ({ ...prev, [key]: value }))
 
     const handleChange = (
-        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+        e: React.ChangeEvent<
+            HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+        >
     ) => {
         const target = e.currentTarget
         const { name, value } = target
+
         if (target instanceof HTMLInputElement && target.type === "checkbox") {
             setFormData((prev) => ({
                 ...prev,
                 [name]: target.checked
             }))
-        } else if (target instanceof HTMLInputElement && target.type === "number") {
+        } else if (
+            target instanceof HTMLInputElement &&
+            target.type === "number"
+        ) {
             setFormData((prev) => ({ ...prev, [name]: Number(value) }))
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }))
@@ -119,7 +126,7 @@ export function CreateBlockModal() {
                             key="dialog"
                             role="dialog"
                             aria-modal="true"
-                            className="w-full max-w-lg space-y-5 rounded-2xl border border-neutral-800 bg-neutral-900 p-6 shadow-2xl"
+                            className="border-neutral-800 bg-neutral-900 w-full max-w-lg space-y-5 rounded-2xl border p-6 font-sans shadow-2xl"
                             initial={{ y: 12, scale: 0.98, opacity: 0 }}
                             animate={{ y: 0, scale: 1, opacity: 1 }}
                             exit={{ y: 12, scale: 0.98, opacity: 0 }}
@@ -130,12 +137,13 @@ export function CreateBlockModal() {
                             }}
                         >
                             <div className="flex items-center justify-between">
-                                <h2 className="text-lg font-semibold text-neutral-100">
+                                <h2 className="text-neutral-100 text-lg font-semibold">
                                     New Block
                                 </h2>
+
                                 <button
                                     onClick={() => setVisible(false)}
-                                    className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-200 hover:bg-neutral-800"
+                                    className="border-neutral-700 text-neutral-200 hover:bg-neutral-800 rounded-lg border px-3 py-1.5 text-sm"
                                 >
                                     Close
                                 </button>
@@ -143,9 +151,10 @@ export function CreateBlockModal() {
 
                             {/* Block Type */}
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                     Block Type
                                 </label>
+
                                 <div className="flex gap-2">
                                     {(["photo", "text"] as const).map(
                                         (type) => {
@@ -182,7 +191,7 @@ export function CreateBlockModal() {
 
                             {/* Content */}
                             <div className="space-y-2">
-                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                     Content
                                 </label>
                                 <input
@@ -195,7 +204,7 @@ export function CreateBlockModal() {
                                             ? "Image caption"
                                             : "Text block content"
                                     }
-                                    className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                    className="border-neutral-700 bg-neutral-800 text-neutral-100 placeholder:text-neutral-500 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                                 />
                             </div>
 
@@ -205,7 +214,7 @@ export function CreateBlockModal() {
                                     {formData.blockType === "photo" ? (
                                         <motion.div
                                             key="photo-panel"
-                                            className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4"
+                                            className="border-neutral-800 bg-neutral-900/60 space-y-4 rounded-xl border p-4"
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -6 }}
@@ -213,7 +222,7 @@ export function CreateBlockModal() {
                                         >
                                             {/* Long Description */}
                                             <div className="space-y-2">
-                                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                                     Long Description
                                                 </label>
                                                 <textarea
@@ -224,13 +233,13 @@ export function CreateBlockModal() {
                                                     onChange={handleChange}
                                                     rows={4}
                                                     placeholder="Long description of the photo."
-                                                    className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                                    className="border-neutral-700 bg-neutral-800 text-neutral-100 placeholder:text-neutral-500 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                                                 />
                                             </div>
 
                                             {/* Default Quality */}
                                             <div className="space-y-2">
-                                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                                     Default Quality
                                                 </label>
                                                 <select
@@ -239,7 +248,7 @@ export function CreateBlockModal() {
                                                         formData.defaultQuality
                                                     }
                                                     onChange={handleChange}
-                                                    className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                                    className="border-neutral-700 bg-neutral-800 text-neutral-100 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                                                 >
                                                     <option value="FULL">
                                                         FULL
@@ -255,7 +264,7 @@ export function CreateBlockModal() {
 
                                             {/* File upload */}
                                             <div className="space-y-2">
-                                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                                     Upload Image
                                                 </label>
                                                 <div className="flex items-center gap-3">
@@ -316,7 +325,7 @@ export function CreateBlockModal() {
                                     ) : (
                                         <motion.div
                                             key="text-panel"
-                                            className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/60 p-4"
+                                            className="border-neutral-800 bg-neutral-900/60 space-y-4 rounded-xl border p-4"
                                             initial={{ opacity: 0, y: 6 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, y: -6 }}
@@ -324,7 +333,7 @@ export function CreateBlockModal() {
                                         >
                                             {/* Font Size */}
                                             <div className="space-y-2">
-                                                <label className="block text-xs uppercase tracking-wide text-neutral-400">
+                                                <label className="text-neutral-400 block text-xs uppercase tracking-wide">
                                                     Font Size (px)
                                                 </label>
                                                 <input
@@ -335,7 +344,7 @@ export function CreateBlockModal() {
                                                     step={1}
                                                     value={formData.fontSize}
                                                     onChange={handleChange}
-                                                    className="w-full rounded-xl border border-neutral-700 bg-neutral-800 px-3 py-2 text-neutral-100 focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                                                    className="border-neutral-700 bg-neutral-800 text-neutral-100 w-full rounded-xl border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600"
                                                 />
                                             </div>
 
@@ -347,11 +356,11 @@ export function CreateBlockModal() {
                                                     name="fontGrow"
                                                     checked={formData.fontGrow}
                                                     onChange={handleChange}
-                                                    className="h-4 w-4 cursor-pointer rounded border-neutral-600 bg-neutral-800 text-emerald-600 focus:ring-emerald-600"
+                                                    className="border-neutral-600 bg-neutral-800 size-4 cursor-pointer rounded text-emerald-600 focus:ring-emerald-600"
                                                 />
                                                 <label
                                                     htmlFor="font-grow"
-                                                    className="text-sm text-neutral-200"
+                                                    className="text-neutral-200 text-sm"
                                                 >
                                                     Font grows with block size
                                                 </label>
@@ -365,7 +374,7 @@ export function CreateBlockModal() {
                             <div className="flex justify-end gap-3 pt-2">
                                 <button
                                     onClick={() => setVisible(false)}
-                                    className="rounded-xl border border-neutral-700 bg-neutral-850 px-4 py-2 text-neutral-200 hover:bg-neutral-800"
+                                    className="border-neutral-700 bg-neutral-850 text-neutral-200 hover:bg-neutral-800 rounded-xl border px-4 py-2"
                                 >
                                     Cancel
                                 </button>
@@ -382,7 +391,7 @@ export function CreateBlockModal() {
                                 >
                                     {submitting && (
                                         <svg
-                                            className="h-4 w-4 animate-spin"
+                                            className="size-4 animate-spin"
                                             viewBox="0 0 24 24"
                                             fill="none"
                                         >

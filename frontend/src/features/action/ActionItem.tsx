@@ -1,11 +1,21 @@
 import React from "react"
 
+/**
+ * {@link ActionItem}
+ */
 type ActionItemProps = {
     icon: React.ReactNode
     delay?: string
     action?: () => void
 }
 
+/**
+ * An individual item on the FoB.
+ *
+ * @param icon The icon for the item.
+ * @param action When the item is pressed.
+ * @param delay The animation delay.
+ */
 export default function ActionItem({
     icon,
     action,

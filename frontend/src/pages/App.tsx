@@ -7,7 +7,7 @@ import {
 } from "../features/bulletin/CreateModalBlock"
 import ActionButton from "../features/action/ActionButton"
 import { useAtom } from "jotai"
-import { authorizationToken, createBlockOpen, editorMode } from "../api/Editor"
+import { createBlockOpen, editorMode } from "../api/Editor"
 import { MdEdit } from "react-icons/md"
 import { useDimensions } from "../hooks/useDimensions"
 import { InsertLinesModal } from "../features/bulletin/InsertLinesModal"
@@ -21,6 +21,7 @@ import {
 import { Board } from "../features/bulletin/api/models/Board"
 import clsx from "clsx"
 import { Helmet } from "react-helmet-async"
+import { authorizationToken } from "../api/Account"
 
 export default function App() {
     useDimensions()

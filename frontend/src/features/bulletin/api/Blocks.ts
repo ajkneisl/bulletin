@@ -3,10 +3,13 @@ import { BASE_URL } from "../../../api/Util"
 import { atom } from "jotai"
 
 export const blocksAtom = atom<Block[]>([])
-
 export const expandedBlockAtom = atom<string | null>(null)
-
 export const photoVersionAtom = atom<Record<string, number>>({})
+
+export const draggingIdAtom = atom<string | null>(null)
+export const resizingIdAtom = atom<string | null>(null)
+export const resizePreviewAtom = atom<{ width: number; height: number } | null>(null)
+export const dragOffsetAtom = atom<{ x: number; y: number }>({ x: 0, y: 0 })
 
 /**
  * Retrieve blocks for a specific board.
@@ -73,11 +76,7 @@ export async function shiftBlocks(
  * @param id The block to rotate.
  * @param degrees Degrees to rotate (e.g. 90, 180, 270).
  */
-export async function rotateBlock(
-    token: string,
-    id: string,
-    degrees: number
-) {
+export async function rotateBlock(token: string, id: string, degrees: number) {
     const response = await fetch(`${BASE_URL}/blocks/rotate`, {
         method: "POST",
         headers: {
