@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.deleteWhere
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.update
 
 /**
  * An individual board with blocks.
@@ -75,6 +76,18 @@ suspend fun createBoard(
         it[Boards.author] = author
         it[Boards.timestamp] = System.currentTimeMillis()
     } get Boards.id
+}
+
+/** Update a board's [name], [description], and/or [timestamp] by its [id]. */
+suspend fun updateBoard(id: String, name: String?, description: String?, timestamp: Long?) = newSuspendedTransaction {
+    Boards.selectAll().where { Boards.id eq id }.singleOrNull()
+        ?: throw ServerError("Board does not exist.", 404)
+
+    Boards.update({ Boards.id eq id }) {
+        if (name != null) it[Boards.name] = name
+        if (description != null) it[Boards.description] = description
+        if (timestamp != null) it[Boards.timestamp] = timestamp
+    }
 }
 
 /** Delete a board by its [id]. */

@@ -1,21 +1,15 @@
 import { MdEdit } from "react-icons/md"
-import { FaPerson, FaPlus } from "react-icons/fa6"
+import { FaPlus } from "react-icons/fa6"
 import { useAtom } from "jotai"
-import {
-    authorizationToken,
-    createBlockOpen,
-    editorMode,
-    insertLinesOpen
-} from "../../api/Editor"
+import { createBlockOpen, editorMode, insertLinesOpen } from "../../api/Editor"
 import clsx from "clsx"
 import ActionItem from "./ActionItem"
 import { FaArrowRight } from "react-icons/fa"
 import { FiLogOut } from "react-icons/fi"
+import { authorizationToken } from "../../api/Account"
 
 /**
  * Button on the bottom right of the screen.
- *
- * @constructor
  */
 export default function ActionButton() {
     const [editor, setEditor] = useAtom(editorMode)

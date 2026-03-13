@@ -13,6 +13,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.delete
 import io.ktor.server.routing.get
+import io.ktor.server.routing.patch
 import io.ktor.server.routing.put
 import io.ktor.server.util.getOrFail
 
@@ -37,6 +38,23 @@ val boardRoutes: Route.() -> Unit = {
             val board = getBoard(id) ?: throw InvalidParameters()
 
             call.respond(board)
+        }
+
+        /** Update a board's name, description, or date. */
+        patch("/{id}") {
+            val boardId = call.parameters.getOrFail("id")
+            getBoard(boardId) ?: throw InvalidParameters()
+
+            val parameters = call.receiveParameters()
+
+            val name = parameters["name"]
+            val description = parameters["description"]
+            val timestamp = parameters["timestamp"]?.toLongOrNull()
+
+            updateBoard(boardId, name, description, timestamp)
+
+            val updated = getBoard(boardId) ?: throw InvalidParameters()
+            call.respond(updated)
         }
 
         /** Delete a board and all its blocks/photos. */

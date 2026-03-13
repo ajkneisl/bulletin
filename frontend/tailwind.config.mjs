@@ -5,6 +5,7 @@ export default {
     theme: {
         fontFamily: {
             serif: ['"Stardom"', 'Georgia', 'serif'],
+            sans: ['"Open Sans"', 'system-ui', 'sans-serif'],
         },
         extend: {
             gridColumnStart: {

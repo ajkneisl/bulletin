@@ -1,16 +1,22 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useEffect, useMemo } from "react"
 import { BlockItem } from "./blocks/BlockItem"
-import { blocksAtom, retrieveBlocks } from "./api/Blocks"
+import {
+    blocksAtom,
+    retrieveBlocks,
+    draggingIdAtom,
+    resizingIdAtom,
+    resizePreviewAtom,
+    dragOffsetAtom
+} from "./api/Blocks"
 import { useAtom } from "jotai"
 import clsx from "clsx"
 import { BASE_URL } from "../../api/Util"
 import { dimensionsAtom } from "../../hooks/useDimensions"
-import { authorizationToken } from "../../api/Editor"
 import { selectedBoardAtom } from "./api/Boards"
+import { authorizationToken } from "../../api/Account"
 
 /**
  * The primary bulletin board.
- * @constructor
  */
 export default function Bulletin() {
     const [blocks, setBlocks] = useAtom(blocksAtom)
@@ -19,6 +25,11 @@ export default function Bulletin() {
 
     const [{ COLS, COL_WIDTH, ROW_HEIGHT, MAX_WIDTH, MAX_HEIGHT }] =
         useAtom(dimensionsAtom)
+
+    const [resizingId, setResizingId] = useAtom(resizingIdAtom)
+    const [resizePreview, setResizePreview] = useAtom(resizePreviewAtom)
+    const [draggingId, setDraggingId] = useAtom(draggingIdAtom)
+    const [dragOffset] = useAtom(dragOffsetAtom)
 
     useEffect(() => {
         if (!selectedBoard) {
@@ -30,18 +41,6 @@ export default function Bulletin() {
             setBlocks(retrievedBlocks)
         )
     }, [setBlocks, selectedBoard])
-
-    const [resizingId, setResizingId] = useState<string | null>(null)
-    const [resizePreview, setResizePreview] = useState<{
-        width: number
-        height: number
-    } | null>(null)
-    const [draggingId, setDraggingId] = useState<string | null>(null)
-    const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({
-        x: 0,
-        y: 0
-    })
-    const offsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 })
 
     useEffect(() => {
         function resizeBlock(id: string, width: number, height: number) {
@@ -123,7 +122,10 @@ export default function Bulletin() {
         COL_WIDTH,
         MAX_HEIGHT,
         ROW_HEIGHT,
-        setBlocks
+        setBlocks,
+        setResizingId,
+        setResizePreview,
+        token
     ])
 
     useEffect(() => {
@@ -149,7 +151,6 @@ export default function Bulletin() {
 
         function onMouseMove(e: MouseEvent) {
             if (!draggingId) return
-            const offset = offsetRef.current
             const gridRect = document
                 .getElementById("grid")
                 ?.getBoundingClientRect()
@@ -160,18 +161,16 @@ export default function Bulletin() {
                 Math.max(
                     0,
                     Math.round(
-                        (e.clientX - gridRect.left - offset.x) / COL_WIDTH
+                        (e.clientX - gridRect.left - dragOffset.x) / COL_WIDTH
                     )
                 )
             )
             const y = Math.max(
                 0,
                 Math.round(
-                    (e.clientY - gridRect.top - offset.y) / ROW_HEIGHT
+                    (e.clientY - gridRect.top - dragOffset.y) / ROW_HEIGHT
                 )
             )
-
-            setDragOffset({ x, y })
 
             setBlocks((prev) =>
                 prev.map((b) => (b.id === draggingId ? { ...b, x, y } : b))
@@ -189,15 +188,7 @@ export default function Bulletin() {
             window.removeEventListener("mousemove", onMouseMove)
             window.removeEventListener("mouseup", onMouseUp)
         }
-    }, [
-        COLS,
-        COL_WIDTH,
-        ROW_HEIGHT,
-        blocks,
-        draggingId,
-        setBlocks,
-        token
-    ])
+    }, [COLS, COL_WIDTH, ROW_HEIGHT, blocks, draggingId, dragOffset, setBlocks, setDraggingId, token])
 
     // compute how many rows we actually need based on block positions
     const maxRow = useMemo(() => {
@@ -222,20 +213,13 @@ export default function Bulletin() {
     }
 
     return (
-        <div id="grid" className={clsx("mx-auto mt-4 grid max-w-lg")} style={style}>
+        <div
+            id="grid"
+            className={clsx("mx-auto mt-4 grid max-w-lg")}
+            style={style}
+        >
             {blocks.map((block) => (
-                <BlockItem
-                    key={block.id}
-                    block={block}
-                    resizingId={resizingId}
-                    resizePreview={resizePreview}
-                    draggingId={draggingId}
-                    dragOffset={dragOffset}
-                    setDraggingId={setDraggingId}
-                    setResizingId={setResizingId}
-                    setResizePreview={setResizePreview}
-                    offsetRef={offsetRef}
-                />
+                <BlockItem key={block.id} block={block} />
             ))}
         </div>
     )

@@ -1,7 +1,6 @@
 import React, { useState } from "react"
-import { login } from "../api/Account"
+import { authorizationToken, login } from "../api/Account"
 import { useAtom } from "jotai"
-import { authorizationToken } from "../api/Editor"
 import { useNavigate } from "react-router"
 
 export default function Login() {
@@ -39,7 +38,7 @@ export default function Login() {
     }
 
     return (
-        <main className="flex min-h-[calc(100vh-48px)] items-center justify-center">
+        <main className="flex min-h-[calc(100vh-48px)] items-center justify-center font-sans">
             <div className="w-full max-w-sm">
                 <div className="card bg-base-100 shadow-2xl">
                     <div className="card-body">

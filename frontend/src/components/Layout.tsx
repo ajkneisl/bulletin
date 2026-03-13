@@ -1,15 +1,17 @@
 import { Outlet } from "react-router"
 import { useAtom } from "jotai"
-import { authorizationToken, usernameAtom } from "api/Editor"
 import { useEffect } from "react"
-import { getUsername } from "../api/Account"
+import { authorizationToken, getUsername, usernameAtom } from "../api/Account"
 
+/**
+ * The primary layout.
+ */
 export default function Layout() {
     const [token, setToken] = useAtom(authorizationToken)
     const [, setUsername] = useAtom(usernameAtom)
 
     useEffect(() => {
-        ;(async () => {
+        const checkToken = async () => {
             if (!token) return
 
             const request = await getUsername(token)
@@ -22,7 +24,9 @@ export default function Layout() {
                 setUsername(null)
                 setToken(null)
             }
-        })()
+        }
+
+        void checkToken()
     }, [setToken, setUsername, token])
 
     return (

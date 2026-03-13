@@ -7,22 +7,27 @@ import {
 } from "../features/bulletin/CreateModalBlock"
 import ActionButton from "../features/action/ActionButton"
 import { useAtom } from "jotai"
-import { authorizationToken, createBlockOpen } from "../api/Editor"
+import { createBlockOpen, editorMode } from "../api/Editor"
+import { MdEdit } from "react-icons/md"
 import { useDimensions } from "../hooks/useDimensions"
 import { InsertLinesModal } from "../features/bulletin/InsertLinesModal"
 import {
     boardsAtom,
     createBoard,
     retrieveBoards,
-    selectedBoardAtom
+    selectedBoardAtom,
+    updateBoard
 } from "../features/bulletin/api/Boards"
 import { Board } from "../features/bulletin/api/models/Board"
 import clsx from "clsx"
+import { Helmet } from "react-helmet-async"
+import { authorizationToken } from "../api/Account"
 
 export default function App() {
     useDimensions()
 
     const [token] = useAtom(authorizationToken)
+    const [isEditorMode] = useAtom(editorMode)
 
     const [isDragging, setIsDragging] = useState(false)
     const [, setShowModal] = useAtom(createBlockOpen)
@@ -36,6 +41,11 @@ export default function App() {
     const [showCreateBoard, setShowCreateBoard] = useState(false)
     const [newBoardName, setNewBoardName] = useState("")
     const [newBoardDescription, setNewBoardDescription] = useState("")
+
+    const [editingBoard, setEditingBoard] = useState(false)
+    const [editName, setEditName] = useState("")
+    const [editDescription, setEditDescription] = useState("")
+    const [editDate, setEditDate] = useState("")
 
     // load boards on mount, select most recent
     useEffect(() => {
@@ -113,6 +123,34 @@ export default function App() {
         setNewBoardDescription("")
     }
 
+    function startEditingBoard() {
+        if (!selectedBoard || !token) return
+        setEditName(selectedBoard.name)
+        setEditDescription(selectedBoard.description)
+        setEditDate(
+            new Date(selectedBoard.timestamp).toISOString().split("T")[0]
+        )
+        setEditingBoard(true)
+    }
+
+    async function handleUpdateBoard() {
+        if (!token || !selectedBoard || !editName.trim()) return
+
+        const timestamp = new Date(editDate + "T00:00:00").getTime()
+
+        const updated = await updateBoard(token, selectedBoard.id, {
+            name: editName.trim(),
+            description: editDescription.trim(),
+            timestamp
+        })
+
+        setSelectedBoard(updated)
+        setBoards((prev) =>
+            prev.map((b) => (b.id === updated.id ? updated : b))
+        )
+        setEditingBoard(false)
+    }
+
     function selectBoard(board: Board) {
         setSelectedBoard(board)
     }
@@ -120,16 +158,78 @@ export default function App() {
     return (
         <div className="relative min-h-screen w-screen font-serif">
             {/* Board header */}
-            {selectedBoard && (
+            {selectedBoard && !editingBoard && (
                 <div className="px-4 pt-6 text-center">
-                    <h1 className="text-3xl italic text-white">
-                        {selectedBoard.name}
-                    </h1>
+                    <Helmet>
+                        <title>{selectedBoard.name}</title>
+                    </Helmet>
+
+                    <div className="inline-flex items-center gap-2">
+                        <h1 className="text-3xl italic text-white">
+                            {selectedBoard.name}
+                        </h1>
+                        {isEditorMode && (
+                            <button
+                                onClick={startEditingBoard}
+                                className="text-neutral-600 hover:text-neutral-400"
+                            >
+                                <MdEdit size={16} />
+                            </button>
+                        )}
+                    </div>
+
                     {selectedBoard.description && (
-                        <p className="mt-1 text-sm text-neutral-400">
+                        <p className="text-neutral-400 mt-1 text-sm">
                             {selectedBoard.description}
                         </p>
                     )}
+                </div>
+            )}
+
+            {/* Board edit form */}
+            {selectedBoard && editingBoard && (
+                <div className="mx-auto max-w-sm px-4 pt-6 text-center">
+                    <Helmet>
+                        <title>editing {selectedBoard.name}</title>
+                    </Helmet>
+
+                    <div className="space-y-2">
+                        <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            placeholder="name"
+                            className="w-full border-b border-neutral-800 bg-transparent py-1 text-center text-3xl italic text-white placeholder-neutral-700 focus:border-neutral-500 focus:outline-none"
+                            autoFocus
+                        />
+                        <input
+                            type="text"
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            placeholder="description"
+                            className="w-full border-b border-neutral-800 bg-transparent py-1 text-center text-sm text-neutral-400 placeholder-neutral-700 focus:border-neutral-500 focus:outline-none"
+                        />
+                        <input
+                            type="date"
+                            value={editDate}
+                            onChange={(e) => setEditDate(e.target.value)}
+                            className="w-full border-b border-neutral-800 bg-transparent py-1 text-center text-sm text-neutral-400 focus:border-neutral-500 focus:outline-none"
+                        />
+                        <div className="flex justify-center gap-4 pt-1">
+                            <button
+                                onClick={handleUpdateBoard}
+                                className="text-xs lowercase text-neutral-500 underline underline-offset-4 hover:text-neutral-300"
+                            >
+                                save
+                            </button>
+                            <button
+                                onClick={() => setEditingBoard(false)}
+                                className="text-xs lowercase text-neutral-500 underline underline-offset-4 hover:text-neutral-300"
+                            >
+                                cancel
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
 
@@ -161,9 +261,7 @@ export default function App() {
                                 {board.name}
                             </span>
                             <span className="text-xs">
-                                {new Date(
-                                    board.timestamp
-                                ).toLocaleDateString()}
+                                {new Date(board.timestamp).toLocaleDateString()}
                             </span>
                         </div>
                         {board.description && (
@@ -177,9 +275,7 @@ export default function App() {
                 {token && (
                     <>
                         <button
-                            onClick={() =>
-                                setShowCreateBoard((prev) => !prev)
-                            }
+                            onClick={() => setShowCreateBoard((prev) => !prev)}
                             className="mt-3 text-xs lowercase text-neutral-600 underline underline-offset-4 hover:text-neutral-400"
                         >
                             {showCreateBoard ? "cancel" : "new board"}

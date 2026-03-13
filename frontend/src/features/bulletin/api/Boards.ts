@@ -33,6 +33,33 @@ export async function createBoard(
     return await response.json()
 }
 
+/** Update a board's name, description, or date. */
+export async function updateBoard(
+    token: string,
+    boardId: string,
+    fields: { name?: string; description?: string; timestamp?: number }
+): Promise<Board> {
+    const params = new URLSearchParams()
+    if (fields.name !== undefined) params.set("name", fields.name)
+    if (fields.description !== undefined) params.set("description", fields.description)
+    if (fields.timestamp !== undefined) params.set("timestamp", fields.timestamp.toString())
+
+    const response = await fetch(`${BASE_URL}/boards/${boardId}`, {
+        method: "PATCH",
+        headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: params
+    })
+
+    if (!response.ok) {
+        return Promise.reject("Failed to update board.")
+    }
+
+    return await response.json()
+}
+
 /** Delete a board. */
 export async function deleteBoard(
     token: string,

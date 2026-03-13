@@ -1,18 +1,19 @@
 import React, { useEffect, useState } from "react"
 import { useNavigate } from "react-router"
-import { useAtom } from "jotai"
-import { authorizationToken, usernameAtom } from "../api/Editor"
+import { useAtom, useSetAtom } from "jotai"
 import {
+    authorizationToken,
     deleteAccount,
     getAllAccounts,
     updatePassword,
-    updateUsername
+    updateUsername,
+    usernameAtom
 } from "../api/Account"
 
 export default function Account() {
     const nav = useNavigate()
     const [token, setToken] = useAtom(authorizationToken)
-    const [username, setUsername] = useAtom(usernameAtom)
+    const setUsername = useSetAtom(usernameAtom)
 
     const [newUsername, setNewUsername] = useState("")
     const [newPassword, setNewPassword] = useState("")
@@ -73,7 +74,7 @@ export default function Account() {
     }
 
     return (
-        <main className="flex min-h-[calc(100vh-48px)] items-center justify-center">
+        <main className="flex min-h-[calc(100vh-48px)] items-center justify-center font-sans">
             <div className="w-full max-w-sm">
                 <div className="card bg-base-100 shadow-2xl">
                     <div className="card-body space-y-4">
