@@ -18,6 +18,7 @@ import {
 } from "../features/bulletin/api/Boards"
 import { Board } from "../features/bulletin/api/models/Board"
 import clsx from "clsx"
+import { Helmet } from "react-helmet-async"
 
 export default function App() {
     useDimensions()
@@ -122,11 +123,16 @@ export default function App() {
             {/* Board header */}
             {selectedBoard && (
                 <div className="px-4 pt-6 text-center">
+                    <Helmet>
+                        <title>{selectedBoard.name}</title>
+                    </Helmet>
+
                     <h1 className="text-3xl italic text-white">
                         {selectedBoard.name}
                     </h1>
+
                     {selectedBoard.description && (
-                        <p className="mt-1 text-sm text-neutral-400">
+                        <p className="text-neutral-400 mt-1 text-sm">
                             {selectedBoard.description}
                         </p>
                     )}
@@ -161,9 +167,7 @@ export default function App() {
                                 {board.name}
                             </span>
                             <span className="text-xs">
-                                {new Date(
-                                    board.timestamp
-                                ).toLocaleDateString()}
+                                {new Date(board.timestamp).toLocaleDateString()}
                             </span>
                         </div>
                         {board.description && (
@@ -177,9 +181,7 @@ export default function App() {
                 {token && (
                     <>
                         <button
-                            onClick={() =>
-                                setShowCreateBoard((prev) => !prev)
-                            }
+                            onClick={() => setShowCreateBoard((prev) => !prev)}
                             className="mt-3 text-xs lowercase text-neutral-600 underline underline-offset-4 hover:text-neutral-400"
                         >
                             {showCreateBoard ? "cancel" : "new board"}

@@ -123,7 +123,8 @@ export default function Bulletin() {
         COL_WIDTH,
         MAX_HEIGHT,
         ROW_HEIGHT,
-        setBlocks
+        setBlocks,
+        token
     ])
 
     useEffect(() => {
@@ -166,9 +167,7 @@ export default function Bulletin() {
             )
             const y = Math.max(
                 0,
-                Math.round(
-                    (e.clientY - gridRect.top - offset.y) / ROW_HEIGHT
-                )
+                Math.round((e.clientY - gridRect.top - offset.y) / ROW_HEIGHT)
             )
 
             setDragOffset({ x, y })
@@ -189,15 +188,7 @@ export default function Bulletin() {
             window.removeEventListener("mousemove", onMouseMove)
             window.removeEventListener("mouseup", onMouseUp)
         }
-    }, [
-        COLS,
-        COL_WIDTH,
-        ROW_HEIGHT,
-        blocks,
-        draggingId,
-        setBlocks,
-        token
-    ])
+    }, [COLS, COL_WIDTH, ROW_HEIGHT, blocks, draggingId, setBlocks, token])
 
     // compute how many rows we actually need based on block positions
     const maxRow = useMemo(() => {
@@ -222,7 +213,11 @@ export default function Bulletin() {
     }
 
     return (
-        <div id="grid" className={clsx("mx-auto mt-4 grid max-w-lg")} style={style}>
+        <div
+            id="grid"
+            className={clsx("mx-auto mt-4 grid max-w-lg")}
+            style={style}
+        >
             {blocks.map((block) => (
                 <BlockItem
                     key={block.id}
