@@ -4,7 +4,7 @@ import { atom } from "jotai"
 /**
  * If the is in editor mode.
  */
-export const editorMode = atomWithStorage("editorMode", false)
+export const editorMode = atom(false)
 
 /**
  * Authorization token.
