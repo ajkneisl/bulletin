@@ -12,7 +12,7 @@ plugins {
 
 group = "dev.ajkneisl"
 
-version = "0.0.1"
+version = "1.1.0"
 
 application { mainClass = "dev.ajkneisl.bulletin.ApplicationKt" }
 
