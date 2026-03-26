@@ -26,9 +26,9 @@ jobs:
                     username: ${{ secrets.SERVER_USER }}
                     key: ${{ secrets.SERVER_SSH_KEY }}
                     script: |
-                        cd /opt/docker/bulletin
+                        cd /opt/docker/portfolio/bulletin
                         git pull origin main
                         docker build -t bulletin:1.0.0 .
                         docker stop bulletin || true
                         docker rm bulletin || true
-                        docker compose -f /opt/docker/Personal.yml up -d bulletin
+                        docker compose -f /opt/docker/portfolio/Personal.yml up -d bulletin
